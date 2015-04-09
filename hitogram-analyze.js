@@ -318,7 +318,7 @@ histogram2D.prototype.smoothing = function(repeat){
     return resultHist;
 };
 histogram2D.prototype.flatten = function(saturate){
-    var resultHist = new histogram2D('2d', this.width, this.height);
+    var resultHist = new histogram2D(this.width, this.height);
     saturate = saturate * this.max();
     for( var x = 0; x< this.width; ++x){
         for( var y =0; y< this.height; ++y){
@@ -328,7 +328,7 @@ histogram2D.prototype.flatten = function(saturate){
     return resultHist;   
 };
 histogram2D.prototype.binary = function toBinary2DHist(saturate){
-    var resultHist = new histogram2D('2d', this.width, this.height);
+    var resultHist = new histogram2D(this.width, this.height);
     saturate = saturate * this.max();
     for( var x = 0; x< this.width; ++x){
         for( var y =0; y< this.height; ++y){
