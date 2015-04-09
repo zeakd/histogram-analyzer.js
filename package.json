@@ -1,6 +1,6 @@
 {
   "name": "histogram-analyze",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "make histogram and analyze it",
   "main": "hitogram-analyze.js",
   "scripts": {
