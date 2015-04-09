@@ -280,7 +280,7 @@ histogram2D.prototype.loop = function(doing){
 };
 histogram2D.prototype.cv = function(mat, saturate){
     saturate = typeof saturate !== "undefined" ? saturate : 1;
-    var resultHist = new histogram2D('2d', this.width, this.height);
+    var resultHist = new histogram2D(this.width, this.height);
     var matSize = parseInt(Math.sqrt(mat.length));
     var cvRange = parseInt(matSize/2);
     for(var x =0; x< this.width; ++x){
