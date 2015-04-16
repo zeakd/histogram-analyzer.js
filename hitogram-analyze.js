@@ -419,5 +419,11 @@ histogram2D.prototype.pickPeaks = function(){
 //export node module
 if(isNodeModule){
     module.exports = HistogramAnalyze;
+} else if(isRequirejs){
+    
+} else {
+    //export normal browser module.
+    window.HistogramAnalyze = HistogramAnalyze;    
 }
+
 })();
