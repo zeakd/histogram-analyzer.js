@@ -16,6 +16,7 @@
             return factory(root); 
         });
     }else if(isNodeModule){
+        module.exports = factory(root);
         //Node module dependency
     }else {
         //export normal browser module.

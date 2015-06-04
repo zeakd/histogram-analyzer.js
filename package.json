@@ -28,5 +28,13 @@
   "bugs": {
     "url": "https://github.com/zeakd/histogram-analyze.js/issues"
   },
-  "homepage": "https://github.com/zeakd/histogram-analyze.js"
+  "homepage": "https://github.com/zeakd/histogram-analyze.js",
+  "devDependencies": {
+    "chai": "^3.0.0",
+    "gulp": "^3.9.0",
+    "gulp-concat": "^2.5.2",
+    "gulp-mocha": "^2.1.1",
+    "gulp-mocha-phantomjs": "^0.6.1",
+    "gulp-strip-debug": "^1.0.2"
+  }
 }
