@@ -3,6 +3,7 @@
     zeakd
 */
 (function(factory){
+    'use strict'
     var root = (typeof self == 'object' && self.self == self && self) ||
             (typeof global == 'object' && global.global == global && global);
     
@@ -44,91 +45,212 @@
 //        }
 //    }
     
-    
-    /* 1D histogram */
-    function histogram1D(width, init){
-        init = typeof init !== 'undefined' ? init : 0;
-        this.width = width;
-        for(var x = 0; x< width; ++x){
-            this[x] = init;   
+    function histogram1D(length, init){
+        var hist1D; 
+        if(length instanceof Array){
+            hist1D = length;
+        }else {
+            init = typeof init !== 'undefined' ? init : 0;
+            hist1D = [];
+            for(var x = 0; x< length; ++x){
+                hist1D[x] = init;   
+            }
         }
+        hist1D.max = function(cmp){
+            return Math.max.apply(null, this);   
+        };
+        hist1D.min = function(cmp){
+            return Math.min.apply(null, this);   
+        };
+        hist1D.cv = function(kernel){
+            var _length = this.length;
+            var resultHist = new histogram1D(_length);
+            var half_kLength = kernel.length/2;
+            var kRange = parseInt(half_kLength);
+            for( var _Idx = 0; _Idx< _length; ++_Idx){
+                for( var k_Idx = -kRange; k_Idx < half_kLength; ++k_Idx){
+                    var _value; 
+                    if( _Idx + k_Idx < 0 ){
+                        _value = this[0];
+                    } else if( _Idx + k_Idx > _length -1) {
+                        _value = this[_length-1];
+                    } else {
+                        _value = this[_Idx + k_Idx];   
+                    }
+                    resultHist[_Idx] += _value * kernel[k_Idx + kRange];    
+                }
+                resultHist[_Idx] = Math.round(resultHist[_Idx] * 1000)/1000;
+            }
+            return resultHist;
+        };
+        hist1D.medianSmoothing = function(kSize, repeat){
+            repeat = typeof repeat !== "undefined"? repeat : 1;
+            var resultHist = this;
+            var kernel = [];
+            for( var idx = 0; idx < kSize; ++idx ){
+                kernel[idx] = 1/kSize;
+            }
+            for(var i=0; i< repeat; ++i){
+                resultHist = resultHist.cv(kernel);    
+            }
+            return resultHist;
+        };
+        hist1D.gaussianSmoothing = function(kSize, repeat){
+            repeat = typeof repeat !== "undefined"? repeat : 1;
+            var resultHist = this;
+            var kernel;
+            switch(kSize) {
+                case 1 : 
+                    kernel = [1];
+                    break;
+                case 3 :
+                    kernel = [1,2,1];
+                    break;
+                case 5 :
+                    kernel = [1,4,6,4,1];
+                    break;
+                case 7 : 
+                    kernel = [1,6,15,20,15,6,1];
+                    break;
+                default : 
+                    throw new Error("HAHAHA kSize should be 1,3,5, or 7");
+            }
+            var kernelSum = kernel.reduce(function(p, c){ return p+c; }); 
+            for(var i=0; i< kernel.length; ++i){
+                kernel[i] = kernel[i]/kernelSum;
+            }
+            for(var i=0; i< repeat; ++i){
+                resultHist = resultHist.cv(kernel);    
+            }
+            return resultHist;
+        };
+        hist1D.flatten = function(saturate){
+            var resultHist = new histogram1D(this.length);
+            saturate = saturate * this.max();
+
+            for( var i = 0; i< this.length; ++i){
+                if( this[i] > saturate ) resultHist[i] = this[i];
+            }
+            
+            return resultHist;  
+        };
+        hist1D.findPeaks = function(count){
+            var peaks = [];
+            var total = 0;
+            for(var x = 0; x< this.length; ++x){
+                //wow. this is peak.
+                total+= this[x];
+                if(isPeak.call(this,x)){
+                    var r, l;
+                    //let's find left and right end.
+                    var size = this[x];
+                    for(r = x+1; r < this.width && this[r] > this[r+1] ; ++r){
+                        size += this[r];   
+                    }
+                    for(l = x-1; 0 <= l && this[l] > this[l-1] ; --l){
+                        size += this[l];
+                    }
+                    //push to peaks array.
+                    peaks[peaks.length] = { x : x, size : size, rangeL : l, rangeR :r };   
+                }
+            }
+            peaks.sort(function(f,b){ return b.size - f.size });
+            for(var i = 0; i<peaks.length; ++i){
+                peaks[i].rate = peaks[i].size/total;   
+            }
+            return peaks;
+            
+            function isPeak(x){
+                return (x-1 < 0 || this[x-1] < this[x]) && 
+                    (x+1 > this.length || this[x] > this[x+1]);
+            }
+        }  
+        return hist1D;
     }
-    histogram1D.prototype.max = function(cmp){
-        var arr = [];
-        for( var i =0; i< this.width; ++i){
-            arr[i] = this[i];   
-        }
-        return Math.max.apply(null, arr);   
-    };
-    histogram1D.prototype.min = function(cmp){
-        var arr = [];
-        for( var i =0; i< this.width; ++i){
-            arr[i] = this[i];   
-        }
-        return Math.min.apply(null, arr);   
-    };
-    histogram1D.prototype.cv = function(coeff){
-        var resultHist = new circularHistogram1D(this.width);  
-        var coeffRange = parseInt(coeff.length / 2);
-        for( var i = coeffRange; i< this.width - coeffRange; ++i){
-            for( var cvIdx = -coeffRange; cvIdx <= coeffRange; ++cvIdx){
-                resultHist[i] += this[i + cvIdx] * coeff[cvIdx + coeffRange];
-            }
-            resultHist[i] = Math.round(resultHist[i] * 100)/100;
-        }
-        return resultHist;
-    };
-    histogram1D.prototype.smoothing = function(repeat){
-        repeat = typeof repeat !== "undefined"? repeat : 1;
-        var resultHist = this;
-        var cvCoeff = [1,1,1,1,1];
-        var cvCoeffSum = cvCoeff.reduce(function(p, c){ return p+c; }); 
-        for(var i=0; i< cvCoeff.length; ++i){
-            cvCoeff[i] = cvCoeff[i]/cvCoeffSum;
-        }
-        for(var i=0; i< repeat; ++i){
-            resultHist = resultHist.cv(cvCoeff);    
-        }
-        return resultHist;
-    };    
-    histogram1D.prototype.flatten = function(saturate){
-        var resultHist = new histogram1D(this.width);
-        saturate = saturate * this.max();
-        for( var i = 0; i< this.width; ++i){
-            if( this[i] > saturate ) resultHist[i] = this[i];
-        }
-        return resultHist;  
-    };
-    histogram1D.prototype.pickPeaks = function(count){
-        var peaks = [];
-        var total = 0;
-        for(var x = 0; x< this.width; ++x){
-            //wow. this is peak.
-            total+= this[x];
-            if(isPeak.call(this,x)){
-                var r, l;
-                //let's find left and right end.
-                var size = this[x];
-                for(r = x+1; r < this.width && this[r] > this[r+1] ; ++r){
-                    size += this[r];   
-                }
-                for(l = x-1; 0 <= l && this[l] > this[l-1] ; --l){
-                    size += this[l];
-                }
-                //push to peaks array.
-                peaks.push({ x : x, size : size, rangeL : l, rangeR :r });   
-            }
-        }
-        peaks.sort(function(f,b){ return b.size - f.size });
-        for(var i = 0; i<peaks.length; ++i){
-            peaks[i].rate = peaks[i].size/total;   
-        }
-        return peaks;
-        function isPeak(x){
-            return (x-1 < 0 || this[x-1] < this[x]) && 
-                (x+1 > this.width || this[x] > this[x+1]);
-        }
-    }  
+    /* 1D histogram */
+//    function histogram1D(width, init){
+//        init = typeof init !== 'undefined' ? init : 0;
+//        this.width = width;
+//        for(var x = 0; x< width; ++x){
+//            this[x] = init;   
+//        }
+//    }
+//    histogram1D.prototype.max = function(cmp){
+//        var arr = [];
+//        for( var i =0; i< this.width; ++i){
+//            arr[i] = this[i];   
+//        }
+//        return Math.max.apply(null, arr);   
+//    };
+//    histogram1D.prototype.min = function(cmp){
+//        var arr = [];
+//        for( var i =0; i< this.width; ++i){
+//            arr[i] = this[i];   
+//        }
+//        return Math.min.apply(null, arr);   
+//    };
+//    histogram1D.prototype.cv = function(filter){
+//        var resultHist = new histogram1D(this.length);  
+//        var filterRange = parseInt(filter.length / 2);
+//        for( var i = filterRange; i< this.length - filterRange; ++i){
+//            for( var cvIdx = -filterRange; cvIdx <= filterRange; ++cvIdx){
+//                resultHist[i] += this[i + cvIdx] * filter[cvIdx + filterRange];
+//            }
+//            resultHist[i] = Math.round(resultHist[i] * 100)/100;
+//        }
+//        return resultHist;
+//    };
+//    histogram1D.prototype.smoothing = function(repeat){
+//        repeat = typeof repeat !== "undefined"? repeat : 1;
+//        var resultHist = this;
+//        var cvCoeff = [1,1,1,1,1];
+//        var cvCoeffSum = cvCoeff.reduce(function(p, c){ return p+c; }); 
+//        for(var i=0; i< cvCoeff.length; ++i){
+//            cvCoeff[i] = cvCoeff[i]/cvCoeffSum;
+//        }
+//        for(var i=0; i< repeat; ++i){
+//            resultHist = resultHist.cv(cvCoeff);    
+//        }
+//        return resultHist;
+//    };    
+//    histogram1D.prototype.flatten = function(saturate){
+//        var resultHist = new histogram1D(this.width);
+//        saturate = saturate * this.max();
+//        for( var i = 0; i< this.width; ++i){
+//            if( this[i] > saturate ) resultHist[i] = this[i];
+//        }
+//        return resultHist;  
+//    };
+//    histogram1D.prototype.pickPeaks = function(count){
+//        var peaks = [];
+//        var total = 0;
+//        for(var x = 0; x< this.width; ++x){
+//            //wow. this is peak.
+//            total+= this[x];
+//            if(isPeak.call(this,x)){
+//                var r, l;
+//                //let's find left and right end.
+//                var size = this[x];
+//                for(r = x+1; r < this.width && this[r] > this[r+1] ; ++r){
+//                    size += this[r];   
+//                }
+//                for(l = x-1; 0 <= l && this[l] > this[l-1] ; --l){
+//                    size += this[l];
+//                }
+//                //push to peaks array.
+//                peaks.push({ x : x, size : size, rangeL : l, rangeR :r });   
+//            }
+//        }
+//        peaks.sort(function(f,b){ return b.size - f.size });
+//        for(var i = 0; i<peaks.length; ++i){
+//            peaks[i].rate = peaks[i].size/total;   
+//        }
+//        return peaks;
+//        function isPeak(x){
+//            return (x-1 < 0 || this[x-1] < this[x]) && 
+//                (x+1 > this.width || this[x] > this[x+1]);
+//        }
+//    }  
 
     /* Circular1D Histogram */
     function circularHistogram1D(width, init){
@@ -193,7 +315,7 @@
         }
         return resultHist;  
     };
-    circularHistogram1D.prototype.pickPeaks = function(count){
+    circularHistogram1D.prototype.findPeaks = function(count){
         var peaks = [];
     //    var minDataIndex = this.indexOf(this.min()); // min is zero, ordinally.
         var min = this.min();
@@ -340,7 +462,7 @@
         }
         return resultHist;
     };
-    histogram2D.prototype.pickPeaks = function(){
+    histogram2D.prototype.findPeaks = function(){
         var peaks = [];
         var total = 0;
         for(var x = 0; x < this.width; ++x){
