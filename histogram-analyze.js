@@ -416,12 +416,10 @@
             return ul && uu && ur && ll && rr && dl && dd && dr;
         }
     };   
-    
     var HistogramAnalyze = {
         histogram1D : histogram1D,
         circularHistogram1D : circularHistogram1D,
         histogram2D : histogram2D
     }
-
     return HistogramAnalyze;
 }));

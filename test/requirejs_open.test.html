@@ -1,0 +1,19 @@
+
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>BROWSER OPEN TEST</title>
+        <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    </head>
+    <body>
+        <script src="../node_modules/chai/chai.js"></script> 
+        <script src="../node_modules/gulp-mocha/node_modules/mocha/mocha.js"></script> 
+        <script>
+            mocha.ui('bdd');
+            mocha.reporter('html');
+            var should = chai.should();
+        </script> 
+        <script src = "scripts/vendor/require.js" data-main = 'scripts/require-main.test.js'></script>
+    </body>
+</html>
