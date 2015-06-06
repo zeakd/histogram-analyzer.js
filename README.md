@@ -33,7 +33,7 @@ new HistogramAnalyze.histogram2D( 3, 3, 1 ); // [  [1,1,1],
 .medianSmoothing(kSize[, repeat])
 .gaussianSmoothing(kSize[, repeat])
 .flatten(saturate) // make 0 below saturate * max 
-.findpicks()
+.findpeaks()
 ```
 
 ### use like this
@@ -41,21 +41,23 @@ new HistogramAnalyze.histogram2D( 3, 3, 1 ); // [  [1,1,1],
 
 var histogram1D = HistogramAnalyze.histogram1D
 
-histogram1D([1,2,3,4,7,4,3,3,1]))
-	.smoothing(3)
+histogram1D([1,0,4,5,20,4,3,3,11,1,2,1])
 	.flatten(0.1)
-	.findpicks()
+	.findpeaks()
 	
-//	[ { x: 4,
-//	    size: 22.555,
-//      rangeL: 0,
-//      rangeR: 5,
-//      rate: 0.4413117063530885 },
-//    { x: 8,
-//      size: 4.444,
-//      rangeL: 7,
-//      rangeR: 9,
-//      rate: 0.08695141755855133 } ]
+    
+//  =  [{ l_end: 1, x: 4, r_end: 6, size: 36, rate: 0.72 }
+//      { l_end: 7, x: 8, r_end: 9, size: 14, rate: 0.28 }]
+
+histogram1D([1,0,4,5,20,4,3,3,11,1,2,1])
+    .smoothing(3,2)
+	.flatten(0.1)
+	.findpeaks()
+    
+//  =  [{ l_end: 0, x: 4, r_end: 7, size: 42.446, rate: 0.791 }]
+
+// size means the sum from l_end to r_end
+// rate is size / total.
 
 // same on hist2D cirHist1D.
 	

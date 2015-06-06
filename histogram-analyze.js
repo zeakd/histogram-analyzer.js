@@ -56,13 +56,24 @@
                 hist1D[x] = init;   
             }
         }
-        hist1D.max = function(cmp){
+        hist1D.max = histogram1DFunctions.max;
+        hist1D.min = histogram1DFunctions.min;
+        hist1D.cv = histogram1DFunctions.cv;
+        hist1D.medianSmoothing = histogram1DFunctions.medianSmoothing;
+        hist1D.gaussianSmoothing = histogram1DFunctions.gaussianSmoothing;
+        hist1D.flatten = histogram1DFunctions.flatten;
+        hist1D.findPeaks = histogram1DFunctions.findPeaks;
+        return hist1D;
+    }
+    
+    var histogram1DFunctions = {
+        max : function(cmp){
             return Math.max.apply(null, this);   
-        };
-        hist1D.min = function(cmp){
+        },
+        min : function(cmp){
             return Math.min.apply(null, this);   
-        };
-        hist1D.cv = function(kernel){
+        },
+        cv : function(kernel){
             var _length = this.length;
             var resultHist = new histogram1D(_length);
             var half_kLength = kernel.length/2;
@@ -82,8 +93,8 @@
                 resultHist[_Idx] = Math.round(resultHist[_Idx] * 1000)/1000;
             }
             return resultHist;
-        };
-        hist1D.medianSmoothing = function(kSize, repeat){
+        },
+        medianSmoothing : function(kSize, repeat){
             repeat = typeof repeat !== "undefined"? repeat : 1;
             var resultHist = this;
             var kernel = [];
@@ -94,8 +105,8 @@
                 resultHist = resultHist.cv(kernel);    
             }
             return resultHist;
-        };
-        hist1D.gaussianSmoothing = function(kSize, repeat){
+        },
+        gaussianSmoothing : function(kSize, repeat){
             repeat = typeof repeat !== "undefined"? repeat : 1;
             var resultHist = this;
             var kernel;
@@ -123,50 +134,105 @@
                 resultHist = resultHist.cv(kernel);    
             }
             return resultHist;
-        };
-        hist1D.flatten = function(saturate){
+        },
+        flatten : function(saturate){
             var resultHist = new histogram1D(this.length);
             saturate = saturate * this.max();
 
             for( var i = 0; i< this.length; ++i){
                 if( this[i] > saturate ) resultHist[i] = this[i];
             }
-            
             return resultHist;  
-        };
-        hist1D.findPeaks = function(count){
+        },
+        findPeaks : function(count){
+            var self = this;
             var peaks = [];
+            var peak;
             var total = 0;
-            for(var x = 0; x< this.length; ++x){
-                //wow. this is peak.
-                total+= this[x];
-                if(isPeak.call(this,x)){
-                    var r, l;
-                    //let's find left and right end.
-                    var size = this[x];
-                    for(r = x+1; r < this.width && this[r] > this[r+1] ; ++r){
-                        size += this[r];   
-                    }
-                    for(l = x-1; 0 <= l && this[l] > this[l-1] ; --l){
-                        size += this[l];
-                    }
-                    //push to peaks array.
-                    peaks[peaks.length] = { x : x, size : size, rangeL : l, rangeR :r };   
+            var state = 0; //0 normal // 1 increase // 2 decrease
+            var size = 0;
+            for(var x = 0; x< self.length -1 ; ++x){
+                total+= self[x];
+                switch(state){
+                    case 0:
+                        if( self[x] < self[x+1] ){ //is Inscreasing
+                            size = self[x];
+                            peak = { l_end : x };
+                            state = 1;
+                        } else if ( x === 0 && self[x] > self[x+1] ){
+                            size = self[x];
+                            peak = { l_end : x, x : x };
+                            state = 2;
+                        }
+                        break;
+                    case 1:
+                        size += self[x];
+                        if( self[x] > self[x+1] ){ //is Decreasing 
+                            peak.x = x;
+                            state = 2;
+                        } else if( self[x] === self[x+1] ){ // is normal. this is not peak;
+                            state = 0;
+                        } else if( x + 1 === self.length ){
+                            peak.x = x;
+                            peak.r_end = x;
+                            peak.size = size;
+                            peaks[peaks.length] = peak;  
+                        }
+                        break;
+                    case 2:
+                        size += self[x];
+                        if( self[x] === self[x+1] ){ //is Normal
+                            peak.r_end = x;
+                            peak.size = size;
+                            peaks[peaks.length] = peak;  
+                            
+                            state = 0;
+                        } else if ( self[x] < self[x+1] ){
+                            peak.r_end = x;
+                            peak.size = size;
+                            peaks[peaks.length] = peak;  
+                            
+                            size = self[x];
+                            peak = { l_end : x };   
+                            state = 1;
+                        }
+                        break;
+                    default:
+                        throw new Error("findpeak _ unknown state");
                 }
+                
+                
+                
+                //wow. this is peak.
+                
+//                if(isPeak.call(this,x)){
+//                    var r, l;
+//                    //let's find left and right end.
+//                    var size = this[x];
+//                    for(r = x+1; r < this.length && this[r] > this[r+1] ; ++r){
+//                        size += this[r];   
+//                    }
+//                    for(l = x-1; 0 <= l && this[l] > this[l-1] ; --l){
+//                        size += this[l];
+//                    }
+//                    //push to peaks array.
+//                    peaks[peaks.length] = { x : x, size : size, l_end : l, r_end :r };   
+//                }
+                
             }
             peaks.sort(function(f,b){ return b.size - f.size });
             for(var i = 0; i<peaks.length; ++i){
-                peaks[i].rate = peaks[i].size/total;   
+                peaks[i].rate = Math.round(peaks[i].size/total * 1000)/1000;   
             }
             return peaks;
-            
             function isPeak(x){
                 return (x-1 < 0 || this[x-1] < this[x]) && 
                     (x+1 > this.length || this[x] > this[x+1]);
             }
-        }  
-        return hist1D;
+        }
     }
+    
+    
     /* 1D histogram */
 //    function histogram1D(width, init){
 //        init = typeof init !== 'undefined' ? init : 0;
@@ -345,7 +411,7 @@
                 }
                 //push to peaks array.
                 peaks.push({ x : this.normalize(x), size : size, 
-                     rangeL : this.normalize(l), rangeR :this.normalize(r) });   
+                     l_end : this.normalize(l), r_end :this.normalize(r) });   
             }
         }
         peaks.sort(function(f,b){ return b.size - f.size });
