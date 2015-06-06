@@ -2,7 +2,7 @@
   "name": "histogram-analyze",
   "version": "1.1.1",
   "description": "make histogram and analyze it",
-  "main": "hitogram-analyze.js",
+  "main": "histogram-analyze.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },

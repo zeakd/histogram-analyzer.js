@@ -1,0 +1,36 @@
+{
+  "name": "histogram-analyze",
+  "main": "histogram-analyze.js",
+  "version": "1.1.1",
+  "homepage": "https://github.com/zeakd/histogram-analyze.js",
+  "authors": [
+    "zeakd <stuzeakd@kaist.ac.kr>"
+  ],
+  "description": "make histogram and analyze it",
+  "moduleType": [
+    "amd",
+    "globals",
+    "node"
+  ],
+  "keywords": [
+    "analyze",
+    "peak",
+    "histogram",
+    "cv",
+    "max",
+    "min",
+    "smoothing",
+    "gaussian",
+    "median",
+    "flatten",
+    "flat"
+  ],
+  "license": "MIT",
+  "ignore": [
+    "**/.*",
+    "node_modules",
+    "bower_components",
+    "test",
+    "tests"
+  ]
+}
