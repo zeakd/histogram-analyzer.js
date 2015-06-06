@@ -8,9 +8,9 @@ Histogram-analyze is a simple histogram analyzing tool working on Browser, Requi
 # How to use
 
 Histogram-analyze have 3 features 
-    * histogram1D
-    * circularHistogram1D
-    * histogram2D
+* histogram1D
+* circularHistogram1D
+* histogram2D
 
 ### constructor 
 ``` javascript
