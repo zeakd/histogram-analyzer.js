@@ -56,7 +56,7 @@ histogram1D([1,0,4,5,20,4,3,3,11,1,2,1])
     
 //  =  [{ l_end: 0, x: 4, r_end: 7, size: 42.446, rate: 0.791 }]
 
-// size means the sum from l_end to r_end
+// size is the sum from l_end to r_end
 // rate is size / total.
 
 // same on hist2D cirHist1D.
